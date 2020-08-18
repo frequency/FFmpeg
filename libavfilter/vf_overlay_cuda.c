@@ -381,7 +381,7 @@ static int overlay_cuda_config_output(AVFilterLink *outlink)
 
 
 #define OFFSET(x) offsetof(OverlayCUDAContext, x)
-#define FLAGS (AV_OPT_FLAG_FILTERING_PARAM | AV_OPT_FLAG_VIDEO_PARAM)
+#define FLAGS AV_OPT_FLAG_VIDEO_PARAM|AV_OPT_FLAG_FILTERING_PARAM
 
 static const AVOption overlay_cuda_options[] = {
     { "x", "Overlay x position",
@@ -421,18 +421,35 @@ static const AVFilterPad overlay_cuda_outputs[] = {
     },
     { NULL }
 };
+static int process_command(AVFilterContext *ctx, const char *cmd, const char *args,
+                           char *res, int res_len, int flags)
+{
+    OverlayCUDAContext *s = ctx->priv;
+
+    int ret;
+
+    if (!strcmp(cmd, "x"))
+        s->x_position = atoi(args);
+    else if (!strcmp(cmd, "y"))
+        s->y_position = atoi(args);
+    else
+        ret = AVERROR(ENOSYS);
+
+    return 0;
+}
 
 AVFilter ff_vf_overlay_cuda = {
-    .name            = "overlay_cuda",
-    .description     = NULL_IF_CONFIG_SMALL("Overlay one video on top of another using CUDA"),
-    .priv_size       = sizeof(OverlayCUDAContext),
-    .priv_class      = &overlay_cuda_class,
-    .init            = &overlay_cuda_init,
-    .uninit          = &overlay_cuda_uninit,
-    .activate        = &overlay_cuda_activate,
-    .query_formats   = &overlay_cuda_query_formats,
-    .inputs          = overlay_cuda_inputs,
-    .outputs         = overlay_cuda_outputs,
-    .preinit         = overlay_cuda_framesync_preinit,
-    .flags_internal  = FF_FILTER_FLAG_HWFRAME_AWARE,
+        .name            = "overlay_cuda",
+        .description     = NULL_IF_CONFIG_SMALL("Overlay one video on top of another using CUDA"),
+        .priv_size       = sizeof(OverlayCUDAContext),
+        .priv_class      = &overlay_cuda_class,
+        .init            = &overlay_cuda_init,
+        .uninit          = &overlay_cuda_uninit,
+        .activate        = &overlay_cuda_activate,
+        .query_formats   = &overlay_cuda_query_formats,
+        .inputs          = overlay_cuda_inputs,
+        .outputs         = overlay_cuda_outputs,
+        .preinit         = overlay_cuda_framesync_preinit,
+        .process_command = process_command,
+        .flags_internal  = FF_FILTER_FLAG_HWFRAME_AWARE | AVFILTER_FLAG_SUPPORT_TIMELINE_INTERNAL | AVFILTER_FLAG_SLICE_THREADS,
 };

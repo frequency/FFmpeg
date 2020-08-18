@@ -575,6 +575,25 @@ static const AVFilterPad cudascale_outputs[] = {
     { NULL }
 };
 
+static int process_command(AVFilterContext *ctx, const char *cmd, const char *args,
+                           char *res, int res_len, int flags)
+{
+    CUDAScaleContext *s = ctx->priv;
+
+    int ret;
+
+    if (!strcmp(cmd, "w")) {
+        s->planes_out[0].width  = atoi(args);
+    }
+    else if (!strcmp(cmd, "h")) {
+        s->planes_out[0].height  = atoi(args);
+    }
+    else
+        ret = AVERROR(ENOSYS);
+
+    return 0;
+}
+
 AVFilter ff_vf_scale_cuda = {
     .name      = "scale_cuda",
     .description = NULL_IF_CONFIG_SMALL("GPU accelerated video resizer"),
@@ -588,6 +607,7 @@ AVFilter ff_vf_scale_cuda = {
 
     .inputs    = cudascale_inputs,
     .outputs   = cudascale_outputs,
+    .process_command = process_command,
 
     .flags_internal = FF_FILTER_FLAG_HWFRAME_AWARE,
 };
